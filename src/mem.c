@@ -80,9 +80,7 @@ getBuddy(void* origin, unsigned long size)
     buddy = (void*)((unsigned long)(origin) + size);
   }
 
-  return buddy;
-
-   
+  return buddy; 
 }
 
 int 
@@ -122,7 +120,35 @@ mem_alloc(unsigned long size)
 int 
 mem_free(void *ptr, unsigned long size)
 {
-  /* ecrire votre code ici */
+  bool fusion = true;
+
+  //on cherche à fusionner des blocs libres
+  void* bloc_actuel = ptr;
+
+  unsigned long taille_actuel = log2(size);
+  if(f2puiss(taille_actuel) < size)
+          taille_actuel++;
+
+  while (fusion){
+    void* buddy = getBuddy(bloc_actuel,f2puiss(taille_actuel));
+
+    //on recherche si le buddy est dans la liste des blocs libres
+
+    bool trouver = false;
+    void* bloc_courrant = TZL[taille_actuel];
+    while(bloc_courrant != NULL)
+    {
+      if(bloc_courrant == buddy){
+        trouver = true;
+        break;
+      }
+
+      //On passe au suivant
+
+    }
+
+    
+  }
   return 0;
 }
 
