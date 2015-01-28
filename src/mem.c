@@ -26,14 +26,27 @@ void* TZL[BUDDY_MAX_INDEX + 1];
 // et un pointeur vers la zone libre suivante
 typedef struct
 {
-  void* suiv;
+  s_header* suiv;
 } s_header;
 
+
+// fonction qui retourne 2 puissance (exp)
+// 0 <= exp < 32 (pour les archi 32 bits)
+unsigned long f2puiss(unsigned int exp)
+{
+  assert(exp >= 0 && exp < 32);
+  return 1 << exp;
+}
+
+
+//fonction qui retourne la partie entiere du logarithme base 2
+// puiss > 0
 unsigned int log2(unsigned long puiss)
 {
+  assert(puiss > 0);
   unsigned int log = 0;
   while(puiss != 1) {
-    puiss = puiss / 2;
+    puiss = puiss >> 1;
     log++;
   }
 
@@ -45,7 +58,29 @@ void*
 getBuddy(void* origin, unsigned long size)
 {
   //on aligne notre zone memoire sur l'adresse 0
-  void* origin_normalisee = origin - zone_memoire;
+  unsigned long origin_normalisee = (unsigned long)(origin) - (unsigned long)(zone_memoire);
+
+  //cas du premier bloc de la zone
+  if(origin_normalisee == 0)
+    return (void*)((unsigned long)(origin) + size);
+
+
+  // on cherche la fin du bloc
+  unsigned long fin_norm = origin_normalisee + size;
+  void* buddy;
+  //on cherche sur quel bloc on est
+  if(f2puiss(log2(fin_norm) == fin_norm))
+  {
+    //On est sur le second segment
+    buddy =  (void*)((unsigned long)(origin) - size);
+  }
+  else
+  {
+    //On est sur le premier bloc
+    buddy = (void*)((unsigned long)(origin) + size);
+  }
+
+  return buddy;
 
    
 }
