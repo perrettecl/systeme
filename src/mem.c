@@ -26,7 +26,7 @@ void* TZL[BUDDY_MAX_INDEX + 1];
 // et un pointeur vers la zone libre suivante
 typedef struct
 {
-  s_header* suiv;
+  void* suiv;
 } s_header;
 
 
@@ -51,6 +51,13 @@ unsigned int log2(unsigned long puiss)
   }
 
   return log;
+}
+
+/* Fonction permettant de decouper un bloc en deux dans la TZL */
+void splitBloc(unsigned int indice)
+{
+  assert(indice <= BUDDY_MAX_INDEX && TZL[indice] != NULL);
+  /* A FAIRE */
 }
 
 /* Fonction retournant l'adresse d'un compagnon d'une zone memoire */
@@ -115,7 +122,31 @@ mem_init()
 void *
 mem_alloc(unsigned long size)
 {
-  /*  ecrire votre code ici */
+  if(ALLOC_MEM_SIZE < size)
+    return TAILLE_TROP_GRANDE;
+  
+  unsigned int indice = log2(size);
+  if(f2puiss(indice) < size)
+      indice++;
+
+  unsigned int i = indice;
+  while(TZL[i] == NULL) {
+    if(i == BUDDY_MAX_INDEX)
+        return PLUS_DE_MEMOIRE;
+  }
+  
+  //on peut split le bloc a l'indice i, nbSplit fois
+  unsigned int nbSplit = i - indice;
+  for(int j=0; j<nbSplit; j++) {
+      //on split le bloc a l'indice i
+      splitBloc(i);
+      i--;
+  }
+  /* A FINIR
+   * On retourne le bloc TZL[indice] et on le supprime de
+   * la liste
+  */
+
   return 0;  
 }
 
