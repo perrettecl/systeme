@@ -57,7 +57,20 @@ unsigned int log2(unsigned long puiss)
 void splitBloc(unsigned int indice)
 {
   assert(indice <= BUDDY_MAX_INDEX && TZL[indice] != NULL);
-  /* A FAIRE */
+  
+  unsigned long nvBloc1 = (unsigned long) TZL[indice];
+  unsigned long nvBloc2 = nvBloc1 + f2puiss(indice-1);
+
+  //on supprime de la liste le bloc qu'on split
+  TZL[indice] = (s_header*)TZL[indice]->suiv;
+
+  //on chaine le bloc qu'on split dans la TZL a l'indice i-1
+  void* prmBlocIm1 = TZL[indice-1];
+
+  (s_header*)(nvBloc1)->suiv = (void*) nvBloc2;
+  (s_header*)(nvBloc2)->suiv = (void*) prmBlocIm1;
+
+  TZL[indice-1] = (void*)nvBloc1;
 }
 
 /* Fonction retournant l'adresse d'un compagnon d'une zone memoire */
@@ -131,6 +144,7 @@ mem_alloc(unsigned long size)
   while(TZL[i] == NULL) {
     if(i == BUDDY_MAX_INDEX)
         return PLUS_DE_MEMOIRE;
+    i++;
   }
   
   //on peut split le bloc a l'indice i, nbSplit fois
@@ -140,12 +154,11 @@ mem_alloc(unsigned long size)
       splitBloc(i);
       i--;
   }
-  /* A FINIR
-   * On retourne le bloc TZL[indice] et on le supprime de
-   * la liste
-  */
+ //on retourne le bloc TZL[indice] et on le supprime de la liste
+  void* blocAAllouer = TZL[indice];
+  TZL[indice] = (s_header*)(TZL[indice])->suiv;
 
-  return 0;  
+  return blocAAllouer;  
 }
 
 int 
