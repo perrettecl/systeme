@@ -164,9 +164,9 @@ mem_free(void *ptr, unsigned long size)
     void* buddy = getBuddy(bloc_actuel,f2puiss(taille_actuel));
 
     //on recherche si le buddy est dans la liste des blocs libres
-
     bool trouver = false;
     void* bloc_courrant = TZL[taille_actuel];
+    void* bloc_prec = NULL;
     while(bloc_courrant != NULL)
     {
       if(bloc_courrant == buddy){
@@ -174,12 +174,44 @@ mem_free(void *ptr, unsigned long size)
         break;
       }
 
-      //On passe au suivant
-
+      bloc_prec = bloc_courrant;
+      bloc_courrant = ((s_header*)bloc_courrant)->suiv;
     }
 
+    //on fusionne si on a trouvé le bloc
+    if(trouver)
+    {
+      //on regarde le bloc d'avant le bloc trouvé
+      //Et on supprime ce bloc de la liste
+      if(bloc_prec != NULL)
+      {
+        ((header*)bloc_prec)->suiv = ((header*)buddy)->suiv;
+      } else {
+        TZL[taille_actuel] = ((header*)buddy)->suiv;
+      }
+
+      if((unsigned long)(buddy) < (unsigned long)(bloc_actuel))
+      {
+        //le buddy est avant le bloc actuel
+        bloc_actuel = buddy; 
+      }
+
+      //on insert le bloc dans la TZl
+      taille_actuel = taille_actuel * 2;
+      (s_header*)(bloc_actuel)->suiv = TZL[taille_actuel];
+      TZL[taille_actuel] = bloc_actuel;
+
+      /*
+      //on regarde si on est a la taille max
+      if(taille_actuel == ALLOC_MEM_SIZE)
+        fusion = false;
+      */
+    } else {
+      fusion = false;
+    }
     
   }
+
   return 0;
 }
 
