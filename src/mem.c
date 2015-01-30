@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdbool.h>
 #include "mem.h"
 
 /** squelette du TP allocateur memoire */
@@ -41,7 +42,7 @@ unsigned long f2puiss(unsigned int exp)
 
 //fonction qui retourne la partie entiere du logarithme base 2
 // puiss > 0
-unsigned int log2(unsigned long puiss)
+unsigned int mylog2(unsigned long puiss)
 {
   assert(puiss > 0);
   unsigned int log = 0;
@@ -62,13 +63,13 @@ void splitBloc(unsigned int indice)
   unsigned long nvBloc2 = nvBloc1 + f2puiss(indice-1);
 
   //on supprime de la liste le bloc qu'on split
-  TZL[indice] = (s_header*)TZL[indice]->suiv;
+  TZL[indice] = ((s_header*)TZL[indice])->suiv;
 
   //on chaine le bloc qu'on split dans la TZL a l'indice i-1
   void* prmBlocIm1 = TZL[indice-1];
 
-  (s_header*)(nvBloc1)->suiv = (void*) nvBloc2;
-  (s_header*)(nvBloc2)->suiv = (void*) prmBlocIm1;
+  ((s_header*)(nvBloc1))->suiv = (void*) nvBloc2;
+  ((s_header*)(nvBloc2))->suiv = (void*) prmBlocIm1;
 
   TZL[indice-1] = (void*)nvBloc1;
 }
@@ -89,7 +90,7 @@ getBuddy(void* origin, unsigned long size)
   unsigned long fin_norm = origin_normalisee + size;
   void* buddy;
   //on cherche sur quel bloc on est
-  if(f2puiss(log2(fin_norm) == fin_norm))
+  if(f2puiss(mylog2(fin_norm) == fin_norm))
   {
     //On est sur le second segment
     buddy =  (void*)((unsigned long)(origin) - size);
@@ -118,7 +119,7 @@ mem_init()
 
   /* Creation de la zone libre */
   //mise du pointeur suivant à null
-  ((s_header)(*zone_memoire)).suiv = NULL;
+  ((s_header*)(zone_memoire))->suiv = NULL;
 
   /* init TZL */
   for(int i = 0; i < BUDDY_MAX_INDEX; i++)
@@ -133,17 +134,21 @@ mem_init()
 void *
 mem_alloc(unsigned long size)
 {
+
+  if(zone_memoire == 0)
+          return NULL;
+
   if(ALLOC_MEM_SIZE < size)
-    return TAILLE_TROP_GRANDE;
+    return (void*) TAILLE_TROP_GRANDE;
   
-  unsigned int indice = log2(size);
+  unsigned int indice = mylog2(size);
   if(f2puiss(indice) < size)
       indice++;
 
   unsigned int i = indice;
   while(TZL[i] == NULL) {
     if(i == BUDDY_MAX_INDEX)
-        return PLUS_DE_MEMOIRE;
+        return (void*) PLUS_DE_MEMOIRE;
     i++;
   }
   
@@ -156,7 +161,7 @@ mem_alloc(unsigned long size)
   }
  //on retourne le bloc TZL[indice] et on le supprime de la liste
   void* blocAAllouer = TZL[indice];
-  TZL[indice] = (s_header*)(TZL[indice])->suiv;
+  TZL[indice] = ((s_header*)(TZL[indice]))->suiv;
 
   return blocAAllouer;  
 }
@@ -169,7 +174,7 @@ mem_free(void *ptr, unsigned long size)
   //on cherche à fusionner des blocs libres
   void* bloc_actuel = ptr;
 
-  unsigned long taille_actuel = log2(size);
+  unsigned long taille_actuel = mylog2(size);
   if(f2puiss(taille_actuel) < size)
           taille_actuel++;
 
@@ -198,9 +203,9 @@ mem_free(void *ptr, unsigned long size)
       //Et on supprime ce bloc de la liste
       if(bloc_prec != NULL)
       {
-        ((header*)bloc_prec)->suiv = ((header*)buddy)->suiv;
+        ((s_header*)bloc_prec)->suiv = ((s_header*)buddy)->suiv;
       } else {
-        TZL[taille_actuel] = ((header*)buddy)->suiv;
+        TZL[taille_actuel] = ((s_header*)buddy)->suiv;
       }
 
       if((unsigned long)(buddy) < (unsigned long)(bloc_actuel))
@@ -211,7 +216,7 @@ mem_free(void *ptr, unsigned long size)
 
       //on insert le bloc dans la TZl
       taille_actuel = taille_actuel * 2;
-      (s_header*)(bloc_actuel)->suiv = TZL[taille_actuel];
+      ((s_header*)bloc_actuel)->suiv = TZL[taille_actuel];
       TZL[taille_actuel] = bloc_actuel;
 
       /*
